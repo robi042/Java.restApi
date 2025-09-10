@@ -57,3 +57,53 @@ with Maven: mvn spring-boot:run
 build JAR and run:
 mvn clean package -DskipTests
 java -jar target/restapi-0.0.1-SNAPSHOT.jar
+
+### Folder Details
+
+controller → Handles HTTP requests, calls services, and returns responses.
+
+dto → Defines request and response objects to avoid exposing entity directly.
+
+entity → Maps Java classes to database tables (using JPA/Hibernate).
+
+exception → Centralized error handling and custom exceptions.
+
+repository → Interfaces extending JpaRepository for database access.
+
+security → Manages JWT authentication, filters, and role-based authorization.
+
+service → Contains business logic, interacts with repositories.
+
+```declarative
+src/main/java/com/test/restapi
+│
+├── controller      # REST controllers (API endpoints)
+│   └── UserController.java
+│
+├── dto             # Data Transfer Objects (request/response payloads)
+│   └── ApiResponse.java
+│   └── UserRequestDto.java
+│   └── UserResponseDto.java
+│
+├── entity          # JPA entities (database tables mapping)
+│   └── User.java
+│
+├── exception       # Global & custom exception handling
+│   └── AppException.java
+│   └── GlobalExceptionHandler.java
+│
+├── repository      # Spring Data JPA repositories
+│   └── UserRepository.java
+│
+├── security        # Security config & JWT utilities
+│   └── JwtUtil.java
+│   └── SecurityConfig.java
+│   └── JwtAuthenticationFilter.java
+│
+├── service         # Business logic layer
+│   └── UserService.java
+│   └── UserServiceImpl.java
+│
+└── RestApiApplication.java  # Main application class
+
+```
