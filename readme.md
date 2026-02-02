@@ -11,7 +11,8 @@ A Spring Boot based REST API for user registration, authentication, and role-bas
 - Role-based access control (via Spring Security)
 - Global exception handling with consistent response format
 - DTO-based request/response
-- MySQL (or any JDBC-compatible) database integration
+- PostgreSQL (or any JDBC-compatible) database integration
+- Redis (Lettuce client; optional for caching/sessions)
 
 ---
 
@@ -41,12 +42,34 @@ Or if Maven is installed globally
 ```mvn clean install```
 
 
-### 3. Database Configuration
+### 3. Credentials (environment variables)
 
-Create a new database in PostgreSQL/MySQL/MsSQL/Oracle
+All credentials come from the environment; nothing is stored in `application.properties`.
 
-Update src/main/resources/application.properties with database credential
+1. Copy the example env file and fill your values:
+   ```bash
+   cp .env.example .env
+   ```
+2. Edit `.env` with your DB URL, username, password, and JWT secret (min 32 chars).
+3. Load env before running (or set variables in your IDE/CI):
+   ```bash
+   export $(grep -v '^#' .env | xargs)
+   ```
 
+**Required variables:**
+
+| Variable        | Description                          |
+|----------------|--------------------------------------|
+| `DB_URL`       | JDBC URL (e.g. `jdbc:postgresql://localhost:5432/yourdb`) |
+| `DB_USERNAME`  | Database username                    |
+| `DB_PASSWORD`  | Database password                     |
+| `JWT_SECRET`   | JWT signing key (min 32 characters)  |
+| `JWT_EXPIRATION` | Optional; token expiry in ms (default `3600000`) |
+| `REDIS_HOST`  | Redis host (default `localhost`)     |
+| `REDIS_PORT`  | Redis port (default `6379`)          |
+| `REDIS_PASSWORD` | Redis password (default `robi132` for local dev) |
+
+Never commit `.env`; it is in `.gitignore`.
 
 ### 4. Run the Application
 
@@ -58,52 +81,42 @@ build JAR and run:
 mvn clean package -DskipTests
 java -jar target/restapi-0.0.1-SNAPSHOT.jar
 
-### Folder Details
+### Project structure (production-oriented)
 
-controller → Handles HTTP requests, calls services, and returns responses.
+- **controller** — HTTP layer only; uses request/response DTOs, delegates to service.
+- **dto** — `ApiResponse` envelope; **request/** (RegisterRequest, LoginRequest) and **response/** (AuthResponse, UserResponse) so entities are never exposed.
+- **entity** — JPA entities (DB mapping only).
+- **exception** — `AppException` + `ErrorCode` for consistent errors; `GlobalExceptionHandler` returns safe messages (no stack traces in production).
+- **repository** — Spring Data JPA interfaces.
+- **security** — JWT creation/validation (`JwtUtil`, config from env), filter, and `SecurityConfig`.
+- **service** — Business logic; uses DTOs and `ErrorCode` for errors.
 
-dto → Defines request and response objects to avoid exposing entity directly.
-
-entity → Maps Java classes to database tables (using JPA/Hibernate).
-
-exception → Centralized error handling and custom exceptions.
-
-repository → Interfaces extending JpaRepository for database access.
-
-security → Manages JWT authentication, filters, and role-based authorization.
-
-service → Contains business logic, interacts with repositories.
-
-```declarative
+```
 src/main/java/com/test/restapi
-│
-├── controller      # REST controllers (API endpoints)
-│   └── UserController.java
-│
-├── dto             # Data Transfer Objects (request/response payloads)
-│   └── ApiResponse.java
-│   └── UserRequestDto.java
-│   └── UserResponseDto.java
-│
-├── entity          # JPA entities (database tables mapping)
+├── controller/
+│   ├── UserController.java    # /users/* endpoints
+│   └── HealthController.java # /db-test, /redis-test (public)
+├── dto/
+│   ├── ApiResponse.java
+│   ├── request/
+│   │   ├── RegisterRequest.java
+│   │   └── LoginRequest.java
+│   └── response/
+│       ├── AuthResponse.java
+│       └── UserResponse.java
+├── entity/
 │   └── User.java
-│
-├── exception       # Global & custom exception handling
-│   └── AppException.java
+├── exception/
+│   ├── AppException.java
+│   ├── ErrorCode.java
 │   └── GlobalExceptionHandler.java
-│
-├── repository      # Spring Data JPA repositories
+├── repository/
 │   └── UserRepository.java
-│
-├── security        # Security config & JWT utilities
-│   └── JwtUtil.java
+├── security/
+│   ├── JwtFilter.java
+│   ├── JwtUtil.java
 │   └── SecurityConfig.java
-│   └── JwtAuthenticationFilter.java
-│
-├── service         # Business logic layer
+├── service/
 │   └── UserService.java
-│   └── UserServiceImpl.java
-│
-└── RestApiApplication.java  # Main application class
-
+└── RestapiApplication.java
 ```

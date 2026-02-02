@@ -2,6 +2,7 @@ package com.test.restapi.exception;
 
 import com.test.restapi.dto.ApiResponse;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Centralized error handling. Never exposes stack traces or internal details in production.
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -26,26 +30,25 @@ public class GlobalExceptionHandler {
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getFieldErrors()
                 .forEach(err -> errors.put(err.getField(), err.getDefaultMessage()));
-
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>(false, 400, "Validation error", null, errors));
+                .body(ApiResponse.error(ErrorCode.VALIDATION_ERROR, "Validation failed", errors));
     }
 
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<ApiResponse<?>> handleDatabaseError(DataAccessException ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse<>(false, 500, "Database error", null, ex.getMessage()));
+                .body(ApiResponse.error(ErrorCode.SERVER_ERROR, "Database error", null));
     }
 
-    @ExceptionHandler(ExpiredJwtException.class)
-    public ResponseEntity<ApiResponse<?>> handleJwtExpired(ExpiredJwtException ex) {
+    @ExceptionHandler({ ExpiredJwtException.class, JwtException.class })
+    public ResponseEntity<ApiResponse<?>> handleJwtError(JwtException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(new ApiResponse<>(false, 403, "JWT expired", null, ex.getMessage()));
+                .body(ApiResponse.error(ErrorCode.JWT_EXPIRED, null, null));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<?>> handleGeneric(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse<>(false, 500, ex.getMessage(), null, ex.getStackTrace()));
+                .body(ApiResponse.error(ErrorCode.SERVER_ERROR, ErrorCode.SERVER_ERROR.getDefaultMessage(), null));
     }
 }
