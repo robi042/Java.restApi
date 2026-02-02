@@ -1,0 +1,26 @@
+# Environment and secrets
+*.env
+
+# Build
+target/
+*.jar
+*.war
+*.class
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+config.bat
+node_modules

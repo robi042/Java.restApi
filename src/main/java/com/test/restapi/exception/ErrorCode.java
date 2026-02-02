@@ -7,7 +7,11 @@ public enum ErrorCode {
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "Unauthorized"),
     FORBIDDEN(HttpStatus.FORBIDDEN, "Forbidden"),
     NOT_FOUND(HttpStatus.NOT_FOUND, "Resource not found"),
-    SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong!");
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "User not found"),
+    INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "Invalid credentials"),
+    EMAIL_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "Email already exists"),
+    JWT_EXPIRED(HttpStatus.FORBIDDEN, "JWT expired"),
+    SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong");
 
     private final HttpStatus status;
     private final String defaultMessage;
